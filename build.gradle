@@ -47,8 +47,8 @@ plugins {
 group = 'com.github.java-json-tools'
 version = '1.13'
 
-sourceCompatibility = JavaVersion.VERSION_1_7;
-targetCompatibility = JavaVersion.VERSION_1_7; // defaults to sourceCompatibility
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8 // defaults to sourceCompatibility
 
 dependencies {
     compileOnly(group: 'com.google.code.findbugs', name: 'jsr305', version: '3.0.2')
@@ -73,7 +73,6 @@ def forRelease = !version.endsWith('-SNAPSHOT')
 /*
  * Repositories to use
  */
-/*
 repositories {
     mavenCentral()
     if (!forRelease) {
@@ -92,20 +91,20 @@ repositories {
         }
     }
 }
-*/
+
 /*
  * Add errorprone checking.
  */
 dependencies {
-    // errorprone('com.google.errorprone:error_prone_core:2.3.3')
-    // errorproneJavac('com.google.errorprone:javac:9+181-r4173-1')
+    errorprone('com.google.errorprone:error_prone_core:2.18.0')
+    errorproneJavac('com.google.errorprone:javac:9+181-r4173-1')
 }
 
 /*
  * Necessary! Otherwise TestNG will not be used...
  *
  */
-test {
+tasks.withType(Test).configureEach {
     useTestNG() {
         useDefaultListeners = true
     }

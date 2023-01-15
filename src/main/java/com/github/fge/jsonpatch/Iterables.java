@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
+ * Iterables
+ *
  * @author {@literal @}soberich on 30-Nov-18
  */
 public final class Iterables {
