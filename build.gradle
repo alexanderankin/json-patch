@@ -29,7 +29,7 @@ plugins {
 
 group = 'com.github.java-json-tools'
 version = '1.13'
-description = "JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386) implementation in Java";
+description = 'JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386) implementation in Java'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8 // defaults to sourceCompatibility
@@ -103,20 +103,22 @@ java {
 }
 
 (javadoc.options as StandardJavadocDocletOptions).with {
-    // def currentJavaVersion = org.gradle.api.JavaVersion.current()
-    // // FIXME: https://github.com/gradle/gradle/issues/11182
-    // if (currentJavaVersion.compareTo(org.gradle.api.JavaVersion.VERSION_1_9) >= 0) {
-    //     addStringOption("-release", "7");
-    // }
-    links("https://docs.oracle.com/javase/10/docs/api/");
-    // linksOffline("https://docs.oracle.com/javase/8/docs/api/", 'java.lang');
-    links("https://www.javadoc.io/doc/com.google.code.findbugs/jsr305/3.0.2/");
-    links("https://fasterxml.github.io/jackson-databind/javadoc/2.11/");
-    links("https://fasterxml.github.io/jackson-core/javadoc/2.11/");
-    links("https://fasterxml.github.io/jackson-annotations/javadoc/2.11/");
-    links("https://www.javadoc.io/doc/com.google.guava/guava/28.2-android/");
-    links("https://java-json-tools.github.io/msg-simple/");
-    links("https://java-json-tools.github.io/jackson-coreutils/");
+    def currentJavaVersion = JavaVersion.current()
+    // FIXME: https://github.com/gradle/gradle/issues/11182
+    if (currentJavaVersion.compareTo(JavaVersion.VERSION_1_9) >= 0) {
+        // consider 10 as jdk 7/8/9 javadoc is un-linkable: no /elements-list (302 -> jdk19)
+        addStringOption('-release', '7')
+    }
+    // link to 7 javadoc but use 10's elements-list because it works
+    linksOffline('https://docs.oracle.com/javase/7/docs/api/',
+            'https://docs.oracle.com/javase/10/docs/api/element-list')
+    links('https://www.javadoc.io/doc/com.google.code.findbugs/jsr305/3.0.2/')
+    links('https://fasterxml.github.io/jackson-databind/javadoc/2.11/')
+    links('https://fasterxml.github.io/jackson-core/javadoc/2.11/')
+    links('https://fasterxml.github.io/jackson-annotations/javadoc/2.11/')
+    links('https://www.javadoc.io/doc/com.google.guava/guava/28.2-android/')
+    links('https://java-json-tools.github.io/msg-simple/')
+    links('https://java-json-tools.github.io/jackson-coreutils/')
 }
 
 /*
@@ -127,7 +129,8 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << '-Xlint:all' << '-Xlint:-serial' << '-Werror'
 }
 (javadoc.options as StandardJavadocDocletOptions).with { options ->
-    options.addStringOption('Xwerror', '-quiet')
+    options.addBooleanOption('Xwerror', true)
+    options.addBooleanOption('quiet', true)
     // there are some missing comments, replace -missing with none to ignore all
     options.addBooleanOption('Xdoclint:-missing', true)
 }
@@ -202,7 +205,7 @@ publishing {
 }
 
 // https://stackoverflow.com/a/74205283
-tasks.register("copyPomToRoot") {
+tasks.register('copyPomToRoot') {
     TaskProvider<GenerateMavenPom> generatePom =
             tasks.named("generatePomFileFor${publication.name.capitalize()}Publication")
                     as TaskProvider<GenerateMavenPom>
