@@ -33,7 +33,7 @@ dependencies {
     provided(group: "com.google.code.findbugs", name: "jsr305", version: "3.0.2");
     compile(group: "com.fasterxml.jackson.core", name: "jackson-databind", version: "2.11.0");
     compile(group: "com.github.java-json-tools", name: "msg-simple", version: "1.2");
-    
+
     compile(group: "com.github.java-json-tools", name: "jackson-coreutils", version: "2.0");
     testCompile(group: "org.testng", name: "testng", version: "7.1.0") {
         exclude(group: "junit", module: "junit");
@@ -44,20 +44,4 @@ dependencies {
     // FIXME: update to 3.x once we're off of Java 7
     testCompile(group: "org.assertj", name: "assertj-core", version: "2.9.1");
     testCompile(group: "com.google.guava", name: "guava", version: "28.2-android");
-}
-
-javadoc.options {
-    def currentJavaVersion = org.gradle.api.JavaVersion.current()
-    // FIXME: https://github.com/gradle/gradle/issues/11182
-    if (currentJavaVersion.compareTo(org.gradle.api.JavaVersion.VERSION_1_9) >= 0) {
-        addStringOption("-release", "7");
-    }
-    links("https://docs.oracle.com/javase/7/docs/api/");
-    links("https://www.javadoc.io/doc/com.google.code.findbugs/jsr305/3.0.2/");
-    links("https://fasterxml.github.com/jackson-databind/javadoc/2.11/");
-    links("https://fasterxml.github.com/jackson-core/javadoc/2.11/");
-    links("https://fasterxml.github.com/jackson-annotations/javadoc/2.11/");
-    links("https://www.javadoc.io/doc/com.google.guava/guava/28.2-android/");
-    links("https://java-json-tools.github.io/msg-simple/");
-    links("https://java-json-tools.github.io/jackson-coreutils/");
 }

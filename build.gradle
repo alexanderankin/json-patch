@@ -17,35 +17,19 @@
  * - ASL 2.0: http://www.apache.org/licenses/LICENSE-2.0.txt
  */
 
-/*
-buildscript {
-    repositories {
-        mavenCentral()
-        maven {
-            url 'http://repo.springsource.org/plugins-release';
-        }
-    }
-    dependencies {
-        classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:4.2.0'
-        classpath(group: 'org.springframework.build.gradle', name: 'propdeps-plugin', version: '0.0.7');
-    }
-};
-*/
-
 plugins {
     id 'java'
     id 'maven-publish'
     id 'signing'
     id 'idea'
     id 'eclipse'
-    id 'biz.aQute.bnd.builder' version '6.4.0' // 4.2.0
-    id 'net.ltgt.errorprone' version '3.0.1' // 0.8.1
+    id 'biz.aQute.bnd.builder' version '6.4.0'
+    id 'net.ltgt.errorprone' version '3.0.1'
 }
-
-// apply(from: 'project.gradle')
 
 group = 'com.github.java-json-tools'
 version = '1.13'
+description = "JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386) implementation in Java";
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8 // defaults to sourceCompatibility
@@ -118,15 +102,34 @@ java {
     withJavadocJar()
 }
 
+(javadoc.options as StandardJavadocDocletOptions).with {
+    // def currentJavaVersion = org.gradle.api.JavaVersion.current()
+    // // FIXME: https://github.com/gradle/gradle/issues/11182
+    // if (currentJavaVersion.compareTo(org.gradle.api.JavaVersion.VERSION_1_9) >= 0) {
+    //     addStringOption("-release", "7");
+    // }
+    links("https://docs.oracle.com/javase/10/docs/api/");
+    // linksOffline("https://docs.oracle.com/javase/8/docs/api/", 'java.lang');
+    links("https://www.javadoc.io/doc/com.google.code.findbugs/jsr305/3.0.2/");
+    links("https://fasterxml.github.io/jackson-databind/javadoc/2.11/");
+    links("https://fasterxml.github.io/jackson-core/javadoc/2.11/");
+    links("https://fasterxml.github.io/jackson-annotations/javadoc/2.11/");
+    links("https://www.javadoc.io/doc/com.google.guava/guava/28.2-android/");
+    links("https://java-json-tools.github.io/msg-simple/");
+    links("https://java-json-tools.github.io/jackson-coreutils/");
+}
+
 /*
  * Lint all the things!
  */
-// gradle.projectsEvaluated needed?
+
 tasks.withType(JavaCompile).configureEach {
     options.compilerArgs << '-Xlint:all' << '-Xlint:-serial' << '-Werror'
 }
-tasks.withType(Javadoc).configureEach {
+(javadoc.options as StandardJavadocDocletOptions).with { options ->
     options.addStringOption('Xwerror', '-quiet')
+    // there are some missing comments, replace -missing with none to ignore all
+    options.addBooleanOption('Xdoclint:-missing', true)
 }
 
 /*
@@ -139,41 +142,13 @@ tasks.withType(Javadoc).configureEach {
 //}
 
 /*
-artifacts {
-    archives jar
-    archives sourcesJar
-    archives javadocJar
-}
-*/
-
-/*
-tasks.named('pom').configure {
-    doLast {
-        pom {}.writeTo(projectDir + '/pom.xml')
-    }
-}
-*/
-// https://stackoverflow.com/a/74205283
-project.afterEvaluate {
-tasks.register("copyPomToRoot") {
-    def publication = publishing.publications.maven
-    def generatePom = tasks.named("generatePomFileFor${publication.name.capitalize()}Publication")
-    dependsOn(generatePom)
-    def output = rootProject.file("${publication.artifactId}-${publication.version}.pom")
-    outputs.file(output)
-    doLast { output.bytes = generatePom.get().destination.bytes }
-}
-}
-/*
  * SIGNING
  */
 
-project.ext {
-    scmUrl = sprintf('git@github.com:java-json-tools/%s.git', name)
-    projectURL = sprintf('https://github.com/java-json-tools/%s', name)
-    sonatypeStaging = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
-    sonatypeSnapshots = 'https://oss.sonatype.org/content/repositories/snapshots/'
-};
+def scmUrl = sprintf('git@github.com:java-json-tools/%s.git', name)
+def projectURL = sprintf('https://github.com/java-json-tools/%s', project.name)
+def sonatypeStaging = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+def sonatypeSnapshots = 'https://oss.sonatype.org/content/repositories/snapshots/'
 
 tasks.register('checkSigningRequirements') {
     doLast {
@@ -191,75 +166,90 @@ tasks.register('checkSigningRequirements') {
     }
 }
 
-publishing {publications {maven(MavenPublication) {from(components.java) } } }
+def publication = publishing.publications.create('maven', MavenPublication)
+publication.from(components.java)
 
-// tasks.withType(MavenPublish).configureEach { dependsOn(checkSigningRequirements) }
+tasks.withType(PublishToMavenRepository).configureEach { dependsOn('checkSigningRequirements') }
+
+// follow Gradle conventions to supply gpg keys:
+// https://docs.gradle.org/current/userguide/signing_plugin.html#sec:signatory_credentials
+if (project.properties.containsKey('sonatypeUsername')) {
+    signing {
+        sign(publication)
+    }
+}
+
 publishing {
     repositories {
-        // beforeDeployment {
-        //     MavenDeployment deployment -> signing.signPom(deployment)
-        // }
-
-        /*
-        repository(url: "${sonatypeStaging}") {
-            authentication(
-                userName: project.properties['sonatypeUsername'],
-                password: project.properties['sonatypePassword']
-            )
+        maven {
+            name = 'repository'
+            url = sonatypeStaging
+            credentials {
+                username = project.properties['sonatypeUsername']
+                password = project.properties['sonatypePassword']
+            }
         }
 
-        snapshotRepository(url: "${sonatypeSnapshots}") {
-            authentication(
-                userName: project.properties['sonatypeUsername'],
-                password: project.properties['sonatypePassword']
-            )
+        maven {
+            name = 'snapshotRepository'
+            url = sonatypeSnapshots
+            credentials {
+                username = project.properties['sonatypeUsername']
+                password = project.properties['sonatypePassword']
+            }
         }
-        */
-        // mavenDeployer {}
     }
+}
+
+// https://stackoverflow.com/a/74205283
+tasks.register("copyPomToRoot") {
+    TaskProvider<GenerateMavenPom> generatePom =
+            tasks.named("generatePomFileFor${publication.name.capitalize()}Publication")
+                    as TaskProvider<GenerateMavenPom>
+    dependsOn(generatePom)
+    def output = rootProject.file("${publication.artifactId}-${publication.version}.pom")
+    outputs.file(output)
+    doLast { output.bytes = generatePom.get().destination.bytes }
 }
 
 /*
  * Configure pom.xml on install, uploadArchives
  */
-// [
-//     install.repositories.mavenInstaller,
-//     uploadArchives.repositories.mavenDeployer
-// ]*.pom*.whenConfigured { pom ->
-//     pom.project {
-//         name project.name
-//         packaging 'jar'
-//         description project.ext.description
-//         url project.ext.projectURL
+publication.with {
+    pom.with {
+        name = project.name
+        packaging = 'jar'
+        description = project.description
+        url = projectURL
 
-//         scm {
-//             url scmUrl
-//             connection scmUrl
-//             developerConnection 'scm:git:' + scmUrl
-//         }
+        scm {
+            url = scmUrl
+            connection = scmUrl
+            developerConnection = 'scm:git:' + scmUrl
+        }
 
-//         licenses {
-//             license {
-//                 name 'Lesser General Public License, version 3 or greater'
-//                 url 'http://www.gnu.org/licenses/lgpl.html'
-//                 distribution 'repo'
-//             }
-//             license {
-//                 name 'Apache Software License, version 2.0'
-//                 url 'http://www.apache.org/licenses/LICENSE-2.0'
-//                 distribution 'repo'
-//             }
-//         }
+        licenses {
+            license {
+                name = 'Lesser General Public License, version 3 or greater'
+                url = 'http://www.gnu.org/licenses/lgpl.html'
+                distribution = 'repo'
+            }
+            license {
+                name = 'Apache Software License, version 2.0'
+                url = 'http://www.apache.org/licenses/LICENSE-2.0'
+                distribution = 'repo'
+            }
+        }
 
-//         developers {
-//             developer {
-//                 id 'huggsboson'
-//                 name 'John Huffaker'
-//                 email 'jhuffaker+java-json-tools@gmail.com'
-//             }
-//         }
-//     }
-// }
+        developers {
+            developer {
+                id = 'huggsboson'
+                name = 'John Huffaker'
+                email = 'jhuffaker+java-json-tools@gmail.com'
+            }
+        }
+    }
+}
 
 signing {
     required { forRelease && gradle.taskGraph.hasTask('uploadArchives') }
